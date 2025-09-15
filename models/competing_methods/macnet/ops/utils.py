@@ -6,7 +6,10 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from skimage.measure import compare_ssim, compare_psnr
+try:
+    from skimage.metrics import structural_similarity as compare_ssim, peak_signal_noise_ratio as compare_psnr
+except ImportError:
+    from skimage.measure import compare_ssim, compare_psnr
 from .gauss import fspecial_gauss
 from scipy import signal
 def kronecker(A, B):
