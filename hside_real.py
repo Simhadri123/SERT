@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     """Dataset Setting"""
     
-    train_dir = '/train_real/'
+    train_dir = '/kaggle/input/realistic-data/train'
 
     train_dataset = DataLoaderTrain(train_dir,50,img_options=img_options,use2d=engine.get_net().use_2dconv)
     train_loader = DataLoader(train_dataset,
@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     """Test-Dev"""
     
-    basefolder = '/test_real'
+    basefolder = '/kaggle/input/realistic-data/test'
     
     mat_datasets = DataLoaderVal(basefolder, 50, None,use2d=engine.get_net().use_2dconv)
     
