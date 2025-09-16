@@ -174,8 +174,20 @@ class Engine(object):
         self.best_psnr = None
         self.best_loss = None
         self.writer = None
+        self.wandb_enabled = False
 
         self.__setup()
+
+    def safe_wandb_log(self, metrics, step=None):
+        """Safely log to wandb if it's enabled and initialized"""
+        if self.wandb_enabled:
+            try:
+                if step is not None:
+                    wandb.log(metrics, step=step)
+                else:
+                    wandb.log(metrics)
+            except Exception as e:
+                print(f"Warning: wandb logging failed: {e}")
 
     def __setup(self):
 
@@ -238,7 +250,16 @@ class Engine(object):
         if log:
             self.writer = get_summary_writer(os.path.join(self.basedir, 'logs'), self.opt.prefix)
             # Initialize wandb if logging is enabled
-            wandb.init(project="sert", name=self.opt.prefix)
+            # Check if running in Kaggle or similar environment and set offline mode
+            if os.path.exists('/kaggle') or 'KAGGLE_KERNEL_RUN_TYPE' in os.environ:
+                os.environ["WANDB_MODE"] = "offline"
+            try:
+                wandb.init(project="sert", name=self.opt.prefix, mode="offline" if os.path.exists('/kaggle') else "online")
+                self.wandb_enabled = True
+            except Exception as e:
+                print(f"Warning: Could not initialize wandb: {e}")
+                print("Continuing without wandb logging...")
+                self.wandb_enabled = False
 
         """Optimization Setup"""
         self.optimizer = optim.Adam(
@@ -414,9 +435,9 @@ class Engine(object):
             train_psnr += psnr
             avg_psnr = train_psnr/ (batch_idx+1)
             if not self.opt.no_log:
-                wandb.log({'train_psnr':avg_psnr},step=self.iteration)
-                wandb.log({'train_loss':loss_data},step=self.iteration)
-                wandb.log({'train_avg_loss':avg_loss},step=self.iteration)
+                self.safe_wandb_log({'train_psnr':avg_psnr}, step=self.iteration)
+                self.safe_wandb_log({'train_loss':loss_data}, step=self.iteration)
+                self.safe_wandb_log({'train_avg_loss':avg_loss}, step=self.iteration)
                 self.writer.add_scalar(
                     join(self.prefix, 'train_psnr'), avg_psnr, self.iteration)
                 self.writer.add_scalar(
@@ -844,7 +865,7 @@ class Engine(object):
         
         print(sum(PSNR)/len(PSNR), sum(RMSE)/len(RMSE), sum(SSIM)/len(SSIM), sum(SAM)/len(SAM), sum(ERGAS)/len(ERGAS))
         if not self.opt.no_log:
-            wandb.log({'val_loss_epoch':avg_loss,'val_psnr_epoch':avg_psnr,'val_sam_epoch':avg_sam,'epoch':self.epoch})             
+            self.safe_wandb_log({'val_loss_epoch':avg_loss,'val_psnr_epoch':avg_psnr,'val_sam_epoch':avg_sam,'epoch':self.epoch})             
             
             self.writer.add_scalar(
                 join(self.prefix, name, 'val_loss_epoch'), avg_loss, self.epoch)

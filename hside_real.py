@@ -9,7 +9,10 @@ from utility import *
 import datetime
 import time
 from hsi_setup import Engine, train_options, make_dataset
-#os.environ["WANDB_MODE"] ='offline'
+
+# Set wandb to offline mode for Kaggle or other environments without internet/login
+if os.path.exists('/kaggle') or 'KAGGLE_KERNEL_RUN_TYPE' in os.environ:
+    os.environ["WANDB_MODE"] = 'offline'
 
 if __name__ == '__main__':
     """Training settings"""
@@ -86,4 +89,9 @@ if __name__ == '__main__':
         display_learning_rate(engine.optimizer)
         if engine.epoch % epoch_per_save == 0:
             engine.save_checkpoint()
-    wandb.finish()
+    
+    # Safely finish wandb if it was initialized
+    try:
+        wandb.finish()
+    except:
+        pass
