@@ -1,4 +1,5 @@
 from email.mime import base, image
+import wandb
 from locale import normalize
 from math import fabs
 from xml.sax import SAXException
@@ -236,6 +237,8 @@ class Engine(object):
         log = not self.opt.no_log
         if log:
             self.writer = get_summary_writer(os.path.join(self.basedir, 'logs'), self.opt.prefix)
+            # Initialize wandb if logging is enabled
+            wandb.init(project="sert", name=self.opt.prefix)
 
         """Optimization Setup"""
         self.optimizer = optim.Adam(
