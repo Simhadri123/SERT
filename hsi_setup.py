@@ -79,7 +79,9 @@ def train_options(parser):
                         help='model architecture: ' +
                         ' | '.join(model_names))
     parser.add_argument('--batchSize', '-b', type=int,
-                        default=16, help='training batch size. default=16')         
+                        default=16, help='training batch size. default=16')
+    parser.add_argument('--epochs', type=int, default=1000,
+                        help='number of training epochs. default=1000')         
     parser.add_argument('--lr', type=float, default=1e-4,
                         help='learning rate. default=1e-3.')
     parser.add_argument('--wd', type=float, default=0,

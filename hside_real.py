@@ -60,9 +60,9 @@ if __name__ == '__main__':
     epoch_per_save = 20
     adjust_learning_rate(engine.optimizer, opt.lr)
     print('loading finished')
-    # from epoch 50 to 100
+    # Training loop using epochs from command line arguments
     engine.epoch  = 0
-    while engine.epoch < 1000:
+    while engine.epoch < opt.epochs:
         np.random.seed()
 
         if engine.epoch == 200:
