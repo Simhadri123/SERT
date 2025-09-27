@@ -104,6 +104,9 @@ if __name__ == '__main__':
         display_learning_rate(engine.optimizer)
         if engine.epoch % epoch_per_save == 0:
             engine.save_checkpoint()
+            
+        # Increment epoch after saving checkpoint (so checkpoint reflects completed epoch)
+        engine.epoch += 1
     
     # Safely finish wandb if it was initialized
     try:

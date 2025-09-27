@@ -464,7 +464,7 @@ class Engine(object):
             progress_bar(batch_idx, len(train_loader), 'AvgLoss: %.4e | Loss: %.4e | Norm: %.4e | Psnr: %4e' 
                          % (avg_loss, loss_data, total_norm,psnr))
 
-        self.epoch += 1
+        # Note: epoch increment moved to main training loop for better checkpoint timing
         if not self.opt.no_log:
             self.writer.add_scalar(
                 join(self.prefix, 'train_loss_epoch'), avg_loss, self.epoch)
