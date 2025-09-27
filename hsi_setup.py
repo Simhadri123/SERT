@@ -413,10 +413,22 @@ class Engine(object):
         print('==> Resuming from checkpoint %s..' % resumePath)
         assert os.path.isdir('checkpoints'), 'Error: no checkpoint directory found!'
         checkpoint = torch.load(resumePath )
-        # if load_opt:
-        #     self.optimizer.load_state_dict(checkpoint['optimizer'])
-
+        
+        # Load the model state
         self.get_net().load_state_dict(checkpoint['net'])
+        
+        # Restore epoch and iteration if available
+        if 'epoch' in checkpoint:
+            self.epoch = checkpoint['epoch']
+            print(f'==> Resuming from epoch {self.epoch}')
+        if 'iteration' in checkpoint:
+            self.iteration = checkpoint['iteration']
+            print(f'==> Resuming from iteration {self.iteration}')
+            
+        # Load optimizer state if requested
+        if load_opt and 'optimizer' in checkpoint:
+            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            print('==> Optimizer state loaded')
 
         
 
@@ -495,8 +507,8 @@ class Engine(object):
                 total_psnr += psnr
                 avg_psnr = total_psnr / (batch_idx+1)
 
-                progress_bar(batch_idx, len(valid_loader), 'Loss: %.4e | PSNR: %.4f | AVGPSNR: %.4f '
-                          % (avg_loss, psnr, avg_psnr))
+                progress_bar(batch_idx, len(valid_loader), 'Loss: %.4e | PSNR: %.4f | SAM: %.4f° | AvgPSNR: %.4f '
+                          % (avg_loss, psnr, sam, avg_psnr))
                 
                 psnr = []
                 h,w=inputs.shape[-2:]
@@ -561,7 +573,27 @@ class Engine(object):
                 # print(color_img.shape)
                 # cv2.imwrite(os.path.join(save_path, filenames[batch_idx][:-4] +'color.png'),cv2.cvtColor(color_img.astype(np.uint8),cv2.COLOR_RGB2BGR))
 
-        print(sum(PSNR)/len(PSNR), sum(RMSE)/len(RMSE), sum(SSIM)/len(SSIM), sum(SAM)/len(SAM), sum(ERGAS)/len(ERGAS))
+        # Calculate final metrics
+        final_psnr = sum(PSNR)/len(PSNR)
+        final_rmse = sum(RMSE)/len(RMSE)
+        final_ssim = sum(SSIM)/len(SSIM)
+        final_sam = sum(SAM)/len(SAM)
+        final_ergas = sum(ERGAS)/len(ERGAS)
+        
+        # Print formatted results
+        print("\n" + "="*60)
+        print(" TEST RESULTS SUMMARY")
+        print("="*60)
+        print(f"Performance Metrics:")
+        print(f"   PSNR:     {final_psnr:.4f} dB    (Higher is better)")
+        print(f"   SSIM:     {final_ssim:.4f}       (0-1, Higher is better)")
+        print(f"   SAM:      {final_sam:.4f}°       (Lower is better)")
+        print(f"   RMSE:     {final_rmse:.4f}       (Lower is better)")
+        print(f"   ERGAS:    {final_ergas:.4f}      (Lower is better)")
+        print("="*60)
+        print(f"Processing completed for {len(PSNR)} images")
+        print(f"Average Loss: {avg_loss:.6f}")
+        print("="*60)
         
         print(avg_psnr, avg_loss,avg_sam)
         return avg_psnr, avg_loss,avg_sam

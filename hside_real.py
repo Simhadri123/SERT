@@ -58,10 +58,25 @@ if __name__ == '__main__':
 
     base_lr = opt.lr
     epoch_per_save = 20
-    adjust_learning_rate(engine.optimizer, opt.lr)
+    
+    # Set initial learning rate, but adjust if resuming from a later epoch
+    if opt.resume and engine.epoch >= 400:
+        adjust_learning_rate(engine.optimizer, base_lr * 0.1)
+        print(f'Adjusted learning rate to {base_lr * 0.1} for epoch {engine.epoch}')
+    elif opt.resume and engine.epoch >= 200:
+        adjust_learning_rate(engine.optimizer, base_lr * 0.5)
+        print(f'Adjusted learning rate to {base_lr * 0.5} for epoch {engine.epoch}')
+    else:
+        adjust_learning_rate(engine.optimizer, opt.lr)
+    
     print('loading finished')
+    
     # Training loop using epochs from command line arguments
-    engine.epoch  = 0
+    # Don't reset epoch to 0 if resuming from checkpoint
+    if not opt.resume:
+        engine.epoch = 0
+    
+    print(f'Starting training from epoch {engine.epoch} to {opt.epochs}')
     while engine.epoch < opt.epochs:
         np.random.seed()
 
