@@ -10,6 +10,12 @@ import datetime
 import time
 from hsi_setup import Engine, train_options, make_dataset
 import wandb
+
+# Set wandb to offline mode for Kaggle or other environments without internet/login
+if os.path.exists('/kaggle') or 'KAGGLE_KERNEL_RUN_TYPE' in os.environ:
+    os.environ["WANDB_MODE"] = 'offline'
+
+
 if __name__ == '__main__':
     """Training settings"""
     
@@ -20,8 +26,7 @@ if __name__ == '__main__':
     print(opt)
 
     data = datetime.datetime.now()
-    wandb.init(project="hsi-denoising", entity="name",name=opt.arch+opt.prefix+'-'+str(data.month)+'-'+str(data.day)+'-'+str(data.hour)+':'+str(data.minute),config=opt)  
-    wandb.config.update(parser)
+    
 
     """Setup Engine"""
     engine = Engine(opt)
@@ -38,7 +43,7 @@ if __name__ == '__main__':
         HSI2Tensor()
     ])
 
-    icvl_64_31_dir ='/data/HSI_Data/ICVL64_31.db/'
+    icvl_64_31_dir ='/kaggle/input/icvl64-31/content/ICVL64_31.db'
     icvl_64_31 = LMDBDataset(icvl_64_31_dir)
     
     target_transform = HSI2Tensor()
@@ -46,7 +51,7 @@ if __name__ == '__main__':
     print('==> Preparing data..')
 
     """Test-Dev"""
-    basefolder = '/data/HSI_Data/icvl_val_gaussian/512_10_70'
+    basefolder = '/kaggle/input/icvl-test-512'
 
     mat_datasets = [MatDataFromFolder(
         basefolder, size=5)]
@@ -99,5 +104,5 @@ if __name__ == '__main__':
         display_learning_rate(engine.optimizer)
         if engine.epoch % epoch_per_save == 0:
             engine.save_checkpoint()
-    wandb.finish()
+
  
