@@ -1,19 +1,62 @@
 from collections import namedtuple
-from .ops.utils import est_noise,count
+import inspect
+import torch
+import torch.nn as nn
+from .ops.utils import est_noise, count
 # from model.qrnn.combinations import *
-from .non_local import NLBlockND,EfficientNL
+from .non_local import NLBlockND, EfficientNL
 from .combinations import *
-Params = namedtuple('Params', ['in_channels', 'channels', 'num_half_layer','rs'])
-from skimage.restoration import  denoise_nl_means,estimate_sigma
+Params = namedtuple('Params', ['in_channels', 'channels', 'num_half_layer', 'rs'])
+
+# skimage API compatibility (multichannel -> channel_axis)
+try:
+    from skimage import restoration as _skrest
+
+    def _supports_param(fn, name: str) -> bool:
+        try:
+            return name in inspect.signature(fn).parameters
+        except Exception:
+            return False
+
+    def estimate_sigma(image, multichannel=None, average_sigmas=True, channel_axis=None, **kwargs):
+        fn = getattr(_skrest, 'estimate_sigma')
+        if _supports_param(fn, 'channel_axis'):
+            if multichannel is not None and channel_axis is None:
+                channel_axis = -1 if multichannel else None
+            return fn(image, average_sigmas=average_sigmas, channel_axis=channel_axis, **kwargs)
+        # Older skimage fallback
+        if _supports_param(fn, 'multichannel'):
+            return fn(image, multichannel=bool(multichannel), average_sigmas=average_sigmas, **kwargs)
+        # Last resort: call without either kwarg
+        return fn(image, **kwargs)
+
+    def denoise_nl_means(image, patch_size=7, patch_distance=9, h=0.08, fast_mode=True,
+                          multichannel=None, sigma=None, channel_axis=None, **kwargs):
+        fn = getattr(_skrest, 'denoise_nl_means')
+        if _supports_param(fn, 'channel_axis'):
+            if multichannel is not None and channel_axis is None:
+                channel_axis = -1 if multichannel else None
+            return fn(image, patch_size=patch_size, patch_distance=patch_distance, h=h,
+                      fast_mode=fast_mode, sigma=sigma, channel_axis=channel_axis, **kwargs)
+        if _supports_param(fn, 'multichannel'):
+            return fn(image, patch_size=patch_size, patch_distance=patch_distance, h=h,
+                      fast_mode=fast_mode, sigma=sigma, multichannel=bool(multichannel), **kwargs)
+        # Last resort: minimal args
+        return fn(image, patch_size=patch_size, patch_distance=patch_distance, h=h, fast_mode=fast_mode, **kwargs)
+except Exception:
+    # If skimage is not available, leave names undefined; actual calls will fail as before.
+    pass
+
+
 class MACNet(nn.Module):
     '''
     Tied lista with coupling
     '''
 
-    def __init__(self, in_channels=1,channels =16, num_half_layer =5 ):
+    def __init__(self, in_channels=1, channels=16, num_half_layer=5):
         super(MACNet, self).__init__()
         self.rs = 2
-        self.net=REDC3DBNRES_NL(in_channels=in_channels,channels=channels,num_half_layer=num_half_layer)
+        self.net = REDC3DBNRES_NL(in_channels=in_channels, channels=channels, num_half_layer=num_half_layer)
 
     def forward(self, I, writer=None, epoch=None, return_patches=False):
 
@@ -30,11 +73,18 @@ class MACNet(nn.Module):
             _I = _I.permute([1, 2, 0])
             _, _, w, _Rw = count(_I)  # count subspace
 
-            _I = torch.matmul(_I, torch.inverse(_Rw).sqrt())  # spectral iid
+            # Use torch.linalg.inv when available (more stable than deprecated torch.inverse)
+            if hasattr(torch, 'linalg') and hasattr(torch.linalg, 'inv'):
+                _inv = torch.linalg.inv(_Rw)
+            else:
+                _inv = torch.inverse(_Rw)
+            _I = torch.matmul(_I, _inv.sqrt())  # spectral iid
             I_nlm = _I.cpu().numpy()
             sigma_est = estimate_sigma(I_nlm, multichannel=True, average_sigmas=True)
-            I_nlm = denoise_nl_means(I_nlm, patch_size=7, patch_distance=9, h=0.08, multichannel=True,
-                                     fast_mode=True, sigma=sigma_est)
+            I_nlm = denoise_nl_means(
+                I_nlm, patch_size=7, patch_distance=9, h=0.08, multichannel=True,
+                fast_mode=True, sigma=sigma_est
+            )
             I_nlm = torch.FloatTensor(I_nlm).to(device=_I.device)
             _R, _Ek, _, _ = count(I_nlm)
             if self.rs:
