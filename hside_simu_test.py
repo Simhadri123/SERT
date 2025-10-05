@@ -33,14 +33,22 @@ if __name__ == '__main__':
 
     mat_dataset = MatDataFromFolder(
         test_dir) 
+    # Get sigma_test from command line arguments
+    sigma_test = getattr(opt, 'sigma_test', 50)  # Default to 50 if not specified
+    print(f'Testing with noise sigma: {sigma_test}')
+    
     if not engine.get_net().use_2dconv:
         mat_transform = Compose([
             LoadMatHSI(input_key='input', gt_key='gt',
                     transform=lambda x:x[ ...][None], needsigma=False),
+            # Add noise to input while keeping gt clean for comparison
+            lambda x: (AddNoise(sigma_test)(x[0]), x[1]),  # Add noise with dynamic sigma_test
         ])
     else:
         mat_transform = Compose([
             LoadMatHSI(input_key='input', gt_key='gt', needsigma=False),
+            # Add noise to input while keeping gt clean for comparison  
+            lambda x: (AddNoise(sigma_test)(x[0]), x[1]),  # Add noise with dynamic sigma_test
         ])
 
     mat_dataset = TransformDataset(mat_dataset, mat_transform)

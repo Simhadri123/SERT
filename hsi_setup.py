@@ -90,6 +90,8 @@ def train_options(parser):
                         help='which loss to choose.', choices=['l1', 'l2', 'smooth_l1', 'ssim', 'l2_ssim','l2_sam','cons','cons_l2'])
     parser.add_argument('--testdir', type=str)
     parser.add_argument('--sigma', type=int)
+    parser.add_argument('--sigma-test', type=int, default=50,
+                        help='noise level (sigma) for testing with simulated noise. default=50')
 
     parser.add_argument('--init', type=str, default='kn',
                         help='which init scheme to choose.', choices=['kn', 'ku', 'xn', 'xu', 'edsr'])
