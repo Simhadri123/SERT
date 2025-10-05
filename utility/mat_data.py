@@ -21,7 +21,8 @@ def create_mat_dataset(datadir, fnames, newdir, matkey, func=None, load=h5py.Fil
             
             data = func(mat[matkey][...])
             data_hwc = data.transpose((2,1,0))
-            savemat(join(newdir, fn), {'data': data_hwc})
+            # Fix: Change 'data' to 'input' to match what the test loader expects
+            savemat(join(newdir, fn), {'input': data_hwc})
             try:
                 Image.fromarray(np.array(data_hwc*255,np.uint8)[:,:,20]).save('/data/HSI_Data/icvl_test_512_png/{}.png'.format(os.path.splitext(fn)[0]))
             except Exception as e:
@@ -97,7 +98,8 @@ def copydata():
         filepath = join(datadir, fn)
         mat = loadmat(filepath)
         data = mat['gt']
-        savemat(join(newdir, fn), {'data': data})
+        # Fix: Change 'data' to 'input' for consistency
+        savemat(join(newdir, fn), {'input': data})
 
 
 
