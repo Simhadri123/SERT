@@ -98,7 +98,7 @@ def train_options(parser):
     parser.add_argument('--no-cuda', action='store_true', help='disable cuda?')
     parser.add_argument('--no-log', action='store_true',
                         help='disable logger?')
-    parser.add_argument('--threads', type=int, default=1,
+    parser.add_argument('--threads', type=int, default=0,
                         help='number of threads for data loader to use')
     parser.add_argument('--seed', type=int, default=2018,
                         help='random seed to use. default=2018')
