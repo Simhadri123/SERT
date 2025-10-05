@@ -384,7 +384,7 @@ class Engine(object):
            
             #noisy_sigma = torch.zeros
             
-            outputs = self.net(inputs)
+            outputs = self.net(inputs.float())
            # outputs = torch.clamp(outputs, 0, 1)
             # loss = self.criterion(outputs, targets)
             
