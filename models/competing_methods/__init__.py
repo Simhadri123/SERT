@@ -3,3 +3,5 @@ from .qrnn import QRNNREDC3D
 from .T3SC.multilayer import MultilayerModel
 from .macnet import MACNet
 from .SST import SST
+from .sqad import SQAD
+from .tdsat import TDSAT
