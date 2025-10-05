@@ -86,53 +86,50 @@ def init_params(net, init_type='kn'):
                 nn.init.constant_(m.weight, 1.0)
 
 
-_, term_width = os.popen('stty size', 'r').read().split()
-term_width = int(term_width)
+# Get terminal width with fallback for different environments
+try:
+    _, term_width = os.popen('stty size', 'r').read().split()
+    term_width = int(term_width)
+except (ValueError, OSError):
+    # Fallback for environments where stty doesn't work (like Kaggle)
+    term_width = 100
 
-TOTAL_BAR_LENGTH = 65.
+TOTAL_BAR_LENGTH = 50.  # Reduced for better compatibility
 last_time = time.time()
 begin_time = last_time
+
 def progress_bar(current, total, msg=None):
     global last_time, begin_time
     if current == 0:
         begin_time = time.time()  # Reset for new bar.
 
-    cur_len = int(TOTAL_BAR_LENGTH*current/total)
+    # Calculate progress
+    cur_len = int(TOTAL_BAR_LENGTH * current / total)
     rest_len = int(TOTAL_BAR_LENGTH - cur_len) - 1
 
-    sys.stdout.write(' [')
-    for i in range(cur_len):
-        sys.stdout.write('=')
-    sys.stdout.write('>')
-    for i in range(rest_len):
-        sys.stdout.write('.')
-    sys.stdout.write(']')
-
+    # Build progress bar
+    bar = '[' + '=' * cur_len + '>' + '.' * rest_len + ']'
+    
+    # Calculate timing
     cur_time = time.time()
     step_time = cur_time - last_time
     last_time = cur_time
     tot_time = cur_time - begin_time
 
-    L = []
-    L.append('  Step: %s' % format_time(step_time))
-    L.append(' | Tot: %s' % format_time(tot_time))
+    # Build message
+    progress_msg = f"\r{bar} {current+1}/{total}"
+    progress_msg += f" | Step: {format_time(step_time)}"
+    progress_msg += f" | Tot: {format_time(tot_time)}"
     if msg:
-        L.append(' | ' + msg)
-
-    msg = ''.join(L)
-    sys.stdout.write(msg)
-    for i in range(term_width-int(TOTAL_BAR_LENGTH)-len(msg)-3):
-        sys.stdout.write(' ')
-
-    # Go back to the center of the bar.
-    for i in range(term_width-int(TOTAL_BAR_LENGTH/2)+2):
-        sys.stdout.write('\b')
-    sys.stdout.write(' %d/%d ' % (current+1, total))
-
-    if current < total-1:
-        sys.stdout.write('\r')
-    else:
+        progress_msg += f" | {msg}"
+    
+    # Clear line and write progress
+    sys.stdout.write('\r' + ' ' * min(term_width - 1, 120))  # Clear line
+    sys.stdout.write('\r' + progress_msg[:min(term_width - 1, 120)])  # Write progress
+    
+    if current >= total - 1:
         sys.stdout.write('\n')
+    
     sys.stdout.flush()
 
 def format_time(seconds):
