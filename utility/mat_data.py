@@ -21,6 +21,8 @@ def create_mat_dataset(datadir, fnames, newdir, matkey, func=None, load=h5py.Fil
             
             data = func(mat[matkey][...])
             data_hwc = data.transpose((2,1,0))
+            # Fix: Ensure data is float32 to match model expectations
+            data_hwc = data_hwc.astype(np.float32)
             # Fix: Save both 'input' (noisy) and 'gt' (clean) data as expected by test loader
             # For testing, both input and gt are the same clean data
             savemat(join(newdir, fn), {'input': data_hwc, 'gt': data_hwc})
