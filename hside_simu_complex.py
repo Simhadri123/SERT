@@ -9,6 +9,8 @@ import datetime
 from utility import *
 from hsi_setup import Engine, train_options, make_dataset
 
+if os.path.exists('/kaggle') or 'KAGGLE_KERNEL_RUN_TYPE' in os.environ:
+    os.environ["WANDB_MODE"] = 'offline'
 
 if __name__ == '__main__':
     """Training settings"""
