@@ -79,12 +79,12 @@ if __name__ == '__main__':
 
     train_loader = DataLoader(train_dataset,
                               batch_size=opt.batchSize, shuffle=True,
-                              num_workers=8, pin_memory=not opt.no_cuda, worker_init_fn=worker_init_fn)
+                              num_workers=0, pin_memory=not opt.no_cuda, worker_init_fn=worker_init_fn)
     
     mat_loaders = [DataLoader(
         mat_dataset,
         batch_size=1, shuffle=False,
-        num_workers=1, pin_memory=opt.no_cuda
+        num_workers=0, pin_memory=opt.no_cuda
     ) for mat_dataset in mat_datasets]        
 
     base_lr = opt.lr
