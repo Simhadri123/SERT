@@ -42,7 +42,7 @@ if __name__ == '__main__':
         HSI2Tensor()
     ])
     #change to 10 for sms_10
-    icvl_64_31_dir = '/data/HSI_Data/ICVL64_31.db/'
+    icvl_64_31_dir = '/kaggle/input/icvl64-31-hs-v2/content/ICVL64_31.db'
     if not os.path.exists(icvl_64_31_dir):
         icvl_64_31_dir = '/home/limiaoyu/data/ICVL64_31.db/'
     icvl_64_31 = LMDBDataset(icvl_64_31_dir)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     #     target_transform, common_transform, 64)
 
     """Test-Dev"""
-    folder_mat = '/data/HSI_Data/icvl_noise_50/512_mix'
+    folder_mat = '/kaggle/input/icvl-test-512'
     
     if not os.path.exists(folder_mat):
         folder_mat =  '/home/limiaoyu/data/icvl_val_gaussian/50_mix'
